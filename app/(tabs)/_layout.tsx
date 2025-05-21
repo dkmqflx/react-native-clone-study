@@ -5,7 +5,8 @@ import { Modal, Text, TouchableOpacity, View } from "react-native";
 
 export default function TabLayout() {
   const router = useRouter();
-  const isLoggedIn = true;
+
+  const isLoggedIn = true; // false로 두면 add, activity, username 탭을 클릭 했을 때 모달이 뜬다
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const openLoginModal = () => {
@@ -16,6 +17,10 @@ export default function TabLayout() {
     setIsLoginModalOpen(false);
   };
 
+  /**
+   * 탭 끼리 왔다갔다 해도 기존 상태가 유지 된다
+   * 홈 탭에서 following 클릭한 다음,activity 탭으로 갔다가, 다시 홈 탭으로 와도 following 텍스트가 클릭 된 것을 볼 수 있다
+   */
   return (
     <>
       <Tabs
@@ -120,6 +125,11 @@ export default function TabLayout() {
           }}
         />
 
+        {/*
+         * 탭 바에는 안 보이지만 URL로는 접근 가능한 숨겨진 라우트를 만드는 코드입니다.
+         * 예를 들어, 홈 탭에서 게시글 1을 클릭하면, 탭 바에는 안 보이지만 URL로는 접근 가능한 숨겨진 라우트를 만드는 코드입니다.
+         * (post)라는 별도의 라우트를 만든 이유는 [username] 탭과 게시글을 보여주는 페이지를 구분하기 위함입니다.
+         */}
         <Tabs.Screen
           name="(post)/[username]/post/[postID]"
           options={{
@@ -128,6 +138,7 @@ export default function TabLayout() {
         />
       </Tabs>
 
+      {/* 로그아웃 상태일 때만 보이는 모달 */}
       <Modal
         visible={isLoginModalOpen}
         transparent={true}
