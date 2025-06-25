@@ -3,7 +3,8 @@ import { Stack } from "expo-router";
 export default function RootLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="modal" options={{ presentation: "modal" }} />
     </Stack>
   );
 }
@@ -25,4 +26,14 @@ export default function RootLayout() {
  *
  * 2. Stack screenOptions={{ headerShown: false }}
  * 루트에서 헤더를 숨김 → 하위에서만 헤더/탭이 보임 → 중복 방지
+ */
+
+/**
+ * <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+ * modal: app/modal.tsx 또는 app/(tabs)/modal.tsx 등
+ * modal이라는 이름의 라우트를 Stack에 등록합니다.
+ * presentation: "modal":
+ *
+ * 이 화면은 모달(팝업) 형태로 표시됩니다.
+ * iOS에서는 화면이 아래에서 위로 올라오는 애니메이션으로 나타납니다.
  */
