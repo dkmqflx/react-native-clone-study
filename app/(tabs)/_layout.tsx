@@ -17,12 +17,6 @@ export default function TabLayout() {
     setIsLoginModalOpen(false);
   };
 
-  /**
-   * 탭 네비게이션에서는 히스토리가 아무리 많이 쌓여있어도 뒤로가기를 하면 무조건 홈으로 이동한다
-   * Tabs 컴포넌트에서 backBehavior 속성을 설정하면 이 동작을 변경할 수 있다
-   * 기본값은 initialRoute이며, 이 경우 히스토리가 쌓여있어도 뒤로가기를 하면 첫 번째 페이지로 이동한다
-   * history로 설정하면 히스토리가 쌓여있으면 뒤로가기를 하면 마지막 페이지로 이동한다
-   */
   return (
     <>
       <Tabs

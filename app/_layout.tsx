@@ -5,6 +5,7 @@ export default function RootLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+      {/* Login 추가 안해도, login.tsx 파일이 있으면 자동으로 라우트가 추가된다 위처럼 추가하는 경우는 커스터마이징 하고 싶을 때 사용한다 */}
     </Stack>
   );
 }
