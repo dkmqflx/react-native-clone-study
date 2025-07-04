@@ -1,7 +1,65 @@
 import { Ionicons } from "@expo/vector-icons";
+import { type BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { Tabs, useRouter } from "expo-router";
-import React, { useState } from "react";
-import { Modal, Text, TouchableOpacity, View } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  Animated,
+  Modal,
+  Pressable,
+  PressableProps,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const AnimatedTabBarButton = ({
+  children,
+  onPress,
+  style,
+  ...restProps
+}: BottomTabBarButtonProps) => {
+  const scaleValue = useRef(new Animated.Value(1)).current;
+  //  React Native의 애니메이션 시스템에서 사용하는 값 객체입니다. 여기서 1은 초기값(스케일 1, 즉 원래 크기)을 의미합니다.
+
+  /**
+   * 더 복잡한 애니메이션을 구현하고 싶다면
+   * https://docs.expo.dev/versions/latest/sdk/reanimated/
+   * https://docs.expo.dev/versions/latest/sdk/lottie/
+   */
+  const handlePressOut = () => {
+    Animated.sequence([
+      Animated.spring(scaleValue, {
+        toValue: 1.2,
+        useNativeDriver: true,
+        speed: 200,
+      }),
+      Animated.spring(scaleValue, {
+        toValue: 1, // 애니메이션이 도달할 최종 값입니다.
+        useNativeDriver: true, // 애니메이션을 JS 스레드가 아닌 네이티브 드라이버에서 실행하도록 하여 성능을 높입니다.
+        speed: 200,
+        // friction: 4, // 스프링(Spring) 애니메이션의 마찰력(저항)을 조절합니다. 값이 클수록 애니메이션이 더 빨리 멈추고, 작을수록 더 오래 흔들립니다(즉, 덜 탄력적임).
+      }),
+    ]).start();
+  };
+
+  return (
+    <Pressable
+      {...(restProps as PressableProps)} // 타입 에러 때문에 처리
+      onPress={onPress}
+      onPressOut={handlePressOut}
+      style={[
+        { flex: 1, justifyContent: "center", alignItems: "center" },
+        style,
+      ]}
+      // Disable Android ripple effect
+      android_ripple={{ borderless: false, radius: 0 }}
+    >
+      <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+};
 
 export default function TabLayout() {
   const router = useRouter();
@@ -23,6 +81,7 @@ export default function TabLayout() {
         backBehavior="history"
         screenOptions={{
           headerShown: false,
+          tabBarButton: (props) => <AnimatedTabBarButton {...props} />,
         }}
       >
         <Tabs.Screen
