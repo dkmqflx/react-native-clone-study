@@ -1,9 +1,12 @@
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -93,7 +96,70 @@ export default function Modal() {
 
   const removeImageFromThread = (id: string, uriToRemove: string) => {};
 
-  const getMyLocation = async (id: string) => {};
+  // 사용자의 현재 위치를 받아와 해당 thread에 위치 정보를 저장하는 함수
+  const getMyLocation = async (id: string) => {
+    // 위치 권한 요청 (foreground)
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    // https://docs.expo.dev/versions/latest/sdk/location/#configurable-properties
+    // requestBackgroundPermissionsAsync 권한 요청을 하려면 더 많은 설정을해주어야 한다.
+
+    console.log("getMyLocation", status);
+    // 권한이 거부된 경우 사용자에게 알림 표시 및 설정으로 이동 옵션 제공
+    if (status !== "granted") {
+      Alert.alert(
+        "Location permission not granted", // 알림 제목
+        "Please grant location permission to use this feature", // 알림 메시지
+        [
+          {
+            text: "Open settings", // 설정 열기 버튼
+            onPress: () => {
+              Linking.openSettings(); // 앱 설정 화면으로 이동
+            },
+          },
+          {
+            text: "Cancel", // 취소 버튼
+          },
+        ]
+      );
+      return;
+    }
+
+    // 권한을 받은 경우
+    // 현재 위치 정보 가져오기
+    const location = await Location.getCurrentPositionAsync({});
+
+    // 해당 thread의 location 필드에 위도, 경도 저장
+    setThreads((prevThreads) =>
+      prevThreads.map((thread) =>
+        thread.id === id
+          ? {
+              ...thread,
+              location: [location.coords.latitude, location.coords.longitude],
+            }
+          : thread
+      )
+    );
+  };
+
+  /**
+   * https://docs.expo.dev/versions/latest/sdk/location/#locationwatchpositionasyncoptions-callback-errorhandler
+   * watchPositionAsync - 위치 변경 시 실시간으로 위치 정보를 받아오는 함수
+   * 다만, 앱을 끄거나 백그라운드로 가버리면 그 권한을 잃어버릴 수 있기 때문에 백그라운드 권한은 따로 얻어야 한다
+   * ex.requestBackgroundPermissionsAsync
+   *
+   * https://docs.expo.dev/versions/latest/sdk/location/#locationstartgeofencingasynctaskname-regions
+   * startGeofencingAsync - 지역 추적 기능을 사용하여 특정 지역에 들어가거나 나가면 알림을 받을 수 있는 함수
+   *
+   * https://docs.expo.dev/versions/latest/sdk/location/#locationwatchheadingasynccallback-errorhandler
+   * watchHeadingAsync - 방향 변경 시 실시간으로 방향 정보를 받아오는 함수
+   *
+   * https://docs.expo.dev/versions/latest/sdk/location/#locationgeocodeasyncaddress
+   * geocodeAsync - 주소를 입력하면 위도, 경도 정보를 받아오는 함수
+   *
+   * https://docs.expo.dev/versions/latest/sdk/location/#locationreversegeocodeasynccallback-errorhandler
+   * reverseGeocodeAsync - 위도, 경도 정보를 입력하면 주소 정보를 받아오는 함수
+   *
+   */
 
   const renderThreadItem = ({
     item,
@@ -178,12 +244,14 @@ export default function Modal() {
           >
             <Ionicons name="image-outline" size={24} color="#777" />
           </Pressable>
+
           <Pressable
             style={styles.actionButton}
             onPress={() => !isPosting && takePhoto(item.id)}
           >
             <Ionicons name="camera-outline" size={24} color="#777" />
           </Pressable>
+
           <Pressable
             style={styles.actionButton}
             onPress={() => {
