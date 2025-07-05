@@ -8,6 +8,7 @@ import {
   Image,
   Linking,
   Pressable,
+  Modal as RNModal,
   StyleSheet,
   Text,
   TextInput,
@@ -15,6 +16,24 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
+
+/*
+ * expo-image-picker: 사용자가 사진/비디오를 선택하거나 카메라로 촬영할 수 있게 해주는 라이브러리
+ *   - launchImageLibraryAsync: 갤러리(사진첩)에서 사진/비디오 선택
+ *   - launchCameraAsync: 카메라로 사진/비디오 촬영
+ *   - 주로 '선택' 또는 '촬영' 기능에 사용
+ *
+ * expo-media-library: 기기 내의 사진/비디오 등 미디어 파일을 저장·관리하는 라이브러리
+ *   - saveToLibraryAsync: 파일을 기기의 갤러리에 저장
+ *   - getAssetsAsync: 기기 내 미디어 파일 목록 조회
+ *   - 주로 '저장', '조회', '관리' 기능에 사용
+ *
+ * 예시: 사용자가 사진을 찍어서 앱에 올리고, 그 사진을 기기 갤러리에도 저장하고 싶을 때
+ *   → expo-image-picker로 촬영 → expo-media-library로 저장
+ */
 
 interface Thread {
   id: string;
@@ -75,13 +94,15 @@ export default function Modal() {
     );
   };
 
-  const canAddThread = (threads.at(-1)?.text.trim().length ?? 0) > 0; // 마지막 스레드의 텍스트가 비어있지 않은지 확인
+  // 마지막 thread(입력란)에 텍스트가 있거나 이미지를 첨부한 경우에만 "Add to thread" 버튼 활성화
+  const canAddThread =
+    (threads.at(-1)?.text.trim().length ?? 0) > 0 ||
+    (threads.at(-1)?.imageUris.length ?? 0) > 0;
 
-  const canPost = threads.every((thread) => thread.text.trim().length > 0); // 모든 스레드의 텍스트가 비어있지 않은지 확인
-
-  const addImageToThread = (id: string, uri: string) => {};
-
-  const addLocationToThread = (id: string, location: [number, number]) => {};
+  // 모든 thread 중 하나라도 텍스트가 있거나 이미지를 첨부한 경우에만 "Post" 버튼 활성화
+  const canPost = threads.every(
+    (thread) => thread.text.trim().length > 0 || thread.imageUris.length > 0
+  );
 
   // 스레드 삭제
   const removeThread = (id: string) => {
@@ -90,11 +111,118 @@ export default function Modal() {
     );
   };
 
-  const pickImage = async (id: string) => {};
+  // 사용자가 갤러리에서 이미지를 선택하여 해당 thread에 추가하는 함수
+  const pickImage = async (id: string) => {
+    // 미디어 라이브러리(사진첩) 접근 권한 요청
+    let { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-  const takePhoto = async (id: string) => {};
+    // 권한이 거부된 경우 알림 표시 및 설정으로 이동 옵션 제공
+    if (status !== "granted") {
+      Alert.alert(
+        "Photos permission not granted", // 알림 제목
+        "Please grant photos permission to use this feature", // 알림 메시지
+        [
+          { text: "Open settings", onPress: () => Linking.openSettings() }, // 설정 열기 버튼
+          {
+            text: "Cancel", // 취소 버튼
+          },
+        ]
+      );
+      return;
+    }
 
-  const removeImageFromThread = (id: string, uriToRemove: string) => {};
+    // 이미지(또는 비디오) 선택 창 열기
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "livePhotos", "videos"], // 선택 가능한 미디어 타입
+      allowsMultipleSelection: true, // 다중 선택 허용
+      selectionLimit: 5, // 최대 5개까지 선택 가능
+    });
+    console.log("image result", result);
+
+    // 사용자가 이미지를 선택한 경우, 즉, 취소 버튼을 누르지 않은 경우
+    if (!result.canceled) {
+      setThreads((prevThreads) =>
+        prevThreads.map((thread) =>
+          thread.id === id
+            ? {
+                ...thread,
+                // 선택한 이미지들의 uri를 기존 imageUris 배열에 추가
+                imageUris: thread.imageUris.concat(
+                  result.assets?.map((asset) => asset.uri) ?? []
+                ),
+              }
+            : thread
+        )
+      );
+    }
+  };
+
+  /**
+   * 사용자가 카메라로 사진(또는 비디오)을 촬영해서
+   * 해당 thread의 imageUris 배열에 추가하는 함수입니다.
+   */
+  const takePhoto = async (id: string) => {
+    // 1. 카메라 접근 권한 요청
+    let { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+    // 2. 권한이 거부된 경우, 알림을 띄우고 설정으로 이동할 수 있게 함
+    if (status !== "granted") {
+      Alert.alert(
+        "Camera permission not granted", // 알림 제목
+        "Please grant camera permission to use this feature", // 알림 메시지
+        [
+          { text: "Open settings", onPress: () => Linking.openSettings() }, // 설정 열기
+          { text: "Cancel" }, // 취소
+        ]
+      );
+      return;
+    }
+
+    // 3. 카메라 촬영 창 열기 (사진/비디오, 여러 장 허용, 최대 5개)
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images", "livePhotos", "videos"], // 촬영 가능한 미디어 타입
+      allowsMultipleSelection: true, // 여러 장 촬영 허용
+      selectionLimit: 5, // 최대 5개까지 촬영 가능
+    });
+    console.log("camera result", result);
+
+    // 4. 촬영 결과를 갤러리에 저장하기 위해 MediaLibrary 권한 요청
+    // MediaLibrary를 사용하지 않고 촬영만 하면 이미지가 갤러리에 저장되지 않는다.
+    status = (await MediaLibrary.requestPermissionsAsync()).status;
+    if (status === "granted" && result.assets?.[0].uri) {
+      MediaLibrary.saveToLibraryAsync(result.assets[0].uri); // 첫 번째 촬영 결과를 갤러리에 저장
+    }
+
+    // 5. 사용자가 촬영을 완료한 경우(취소하지 않은 경우), thread에 이미지 uri 추가
+    if (!result.canceled) {
+      setThreads((prevThreads) =>
+        prevThreads.map((thread) =>
+          thread.id === id
+            ? {
+                ...thread,
+                // 촬영한 이미지들의 uri를 기존 imageUris 배열에 추가
+                imageUris: thread.imageUris.concat(
+                  result.assets?.map((asset) => asset.uri) ?? []
+                ),
+              }
+            : thread
+        )
+      );
+    }
+  };
+
+  const removeImageFromThread = (id: string, uriToRemove: string) => {
+    setThreads((prevThreads) =>
+      prevThreads.map((thread) =>
+        thread.id === id
+          ? {
+              ...thread,
+              imageUris: thread.imageUris.filter((uri) => uri !== uriToRemove),
+            }
+          : thread
+      )
+    );
+  };
 
   // 사용자의 현재 위치를 받아와 해당 thread에 위치 정보를 저장하는 함수
   const getMyLocation = async (id: string) => {
@@ -283,6 +411,12 @@ export default function Modal() {
         keyExtractor={(item) => item.id}
         renderItem={renderThreadItem}
         // 리스트 하단에 추가 버튼 컴포넌트 추가
+        /**
+         * https://docs.expo.dev/versions/latest/sdk/picker/
+         * 스레드 앱 보면 하단에 드롭다운 나오는데, 이 때 사용할 수 있는 라이브러리
+         * 하지만 커스터마이징이 불가능해서 시스템 UI를 써야한다
+         * 커스터마이징하고 싶으면 modal로 구현하면 된다 -> RNModal
+         */
         ListFooterComponent={
           <ListFooter
             canAddThread={canAddThread}
@@ -300,6 +434,49 @@ export default function Modal() {
         contentContainerStyle={{ backgroundColor: "#ddd" }}
         keyboardShouldPersistTaps="handled"
       />
+
+      {/* 커스텀 드롭다운을 위한 모달(RNModal) 구현 */}
+      <RNModal
+        transparent={true}
+        visible={isDropdownVisible}
+        animationType="fade"
+        onRequestClose={() => setIsDropdownVisible(false)}
+      >
+        {/* 모달 바깥 영역을 누르면 닫히도록 Pressable로 감쌈 */}
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setIsDropdownVisible(false)}
+        >
+          {/* 드롭다운 옵션 컨테이너 */}
+          <View
+            style={[styles.dropdownContainer, { bottom: insets.bottom + 30 }]}
+          >
+            {/* 드롭다운 옵션 목록 렌더링 */}
+            {replyOptions.map((option) => (
+              <Pressable
+                key={option}
+                style={[
+                  styles.dropdownOption,
+                  option === replyOption && styles.selectedOption,
+                ]}
+                onPress={() => {
+                  setReplyOption(option); // 옵션 선택 시 상태 변경
+                  setIsDropdownVisible(false); // 모달 닫기
+                }}
+              >
+                <Text
+                  style={[
+                    styles.dropdownOptionText,
+                    option === replyOption && styles.selectedOptionText,
+                  ]}
+                >
+                  {option}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </RNModal>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
         <Pressable onPress={() => setIsDropdownVisible(true)}>
