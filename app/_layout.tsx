@@ -66,6 +66,7 @@ export default function RootLayout() {
 
   const logout = () => {
     setUser(null);
+
     return Promise.all([
       SecureStore.deleteItemAsync("accessToken"),
       SecureStore.deleteItemAsync("refreshToken"),
@@ -73,11 +74,15 @@ export default function RootLayout() {
     ]);
   };
 
+  // 앱이 처음 실행될 때 AsyncStorage에서 "user" 정보를 불러옴
   useEffect(() => {
     AsyncStorage.getItem("user").then((user) => {
+      // user 정보가 있으면 파싱해서 상태에 저장, 없으면 null로 설정
       setUser(user ? JSON.parse(user) : null);
     });
-    // TODO: validating access token
+    // TODO: 추후 access token 유효성 검증 로직 추가한다
+    // 예를들어, 한달만에 로그인을 한다고 했을 때, accessToken은 AsyncStorage에 저장되어 있더라도
+    // 토큰이 만료되어 로그인을 해야하는 경우가 있을 수 있기 때문
   }, []);
 
   return (

@@ -1,9 +1,12 @@
+import SideMenu from "@/components/SideMenu";
+import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { usePathname, useRouter } from "expo-router";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import {
   Dimensions,
   Image,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,6 +18,7 @@ import { AuthContext } from "../../_layout";
 export default function Index() {
   const router = useRouter();
   const pathname = usePathname();
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 
   const insets = useSafeAreaInsets();
   console.log("insets", insets); // 어느 정도의 간격을 띄워야 하는지를 알 수 있다
@@ -42,12 +46,28 @@ export default function Index() {
         { paddingTop: insets.top, paddingBottom: insets.bottom },
       ]}
     >
-      {/* backdrop 효과를 주기 위해 BlurView 사용 */}
       <BlurView style={styles.header} intensity={70}>
+        {isLoggedIn && (
+          <Pressable
+            style={styles.menuButton}
+            onPress={() => {
+              setIsSideMenuOpen(true);
+            }}
+          >
+            <Ionicons name="menu" size={24} color="black" />
+          </Pressable>
+        )}
+
+        <SideMenu
+          isVisible={isSideMenuOpen}
+          onClose={() => setIsSideMenuOpen(false)}
+        />
+
         <Image
           source={require("../../../assets/images/react-logo.png")}
           style={styles.headerLogo}
         />
+
         {!isLoggedIn && (
           <TouchableOpacity
             style={styles.loginButton}
@@ -82,19 +102,17 @@ export default function Index() {
       )}
 
       <View>
-        <TouchableOpacity onPress={() => router.push(`/@expotest/post/1`)}>
+        <TouchableOpacity onPress={() => router.push(`/@zerocho/post/1`)}>
           <Text>게시글1</Text>
         </TouchableOpacity>
       </View>
-
       <View>
-        <TouchableOpacity onPress={() => router.push(`/@expotest/post/2`)}>
+        <TouchableOpacity onPress={() => router.push(`/@zerocho/post/2`)}>
           <Text>게시글2</Text>
         </TouchableOpacity>
       </View>
-
       <View>
-        <TouchableOpacity onPress={() => router.push(`/@expotest/post/3`)}>
+        <TouchableOpacity onPress={() => router.push(`/@zerocho/post/3`)}>
           <Text>게시글3</Text>
         </TouchableOpacity>
       </View>
@@ -140,6 +158,11 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "white",
+  },
+  menuButton: {
+    position: "absolute",
+    left: 20,
+    top: 10,
   },
 });
 
