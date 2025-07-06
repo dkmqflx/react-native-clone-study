@@ -1,5 +1,6 @@
 import { BlurView } from "expo-blur";
 import { usePathname, useRouter } from "expo-router";
+import { useContext } from "react";
 import {
   Dimensions,
   Image,
@@ -9,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AuthContext } from "../../_layout";
 
 export default function Index() {
   const router = useRouter();
@@ -17,7 +19,8 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   console.log("insets", insets); // 어느 정도의 간격을 띄워야 하는지를 알 수 있다
 
-  const isLoggedIn = false;
+  const { user } = useContext(AuthContext);
+  const isLoggedIn = !!user;
 
   /**
    * SafeAreaView 컴포넌트를 사용하면
