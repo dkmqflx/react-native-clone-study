@@ -1,19 +1,125 @@
-import { Slot } from "expo-router";
+import { AuthContext } from "@/app/_layout";
+import SideMenu from "@/components/SideMenu";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  type MaterialTopTabNavigationEventMap,
+  type MaterialTopTabNavigationOptions,
+  createMaterialTopTabNavigator,
+} from "@react-navigation/material-top-tabs";
+import type {
+  ParamListBase,
+  TabNavigationState,
+} from "@react-navigation/native";
+import { withLayoutContext } from "expo-router";
+import { useContext, useState } from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default Slot;
+const { Navigator } = createMaterialTopTabNavigator();
 
-/**
- * expo-router에서 각 디렉토리의 _layout.tsx는 그 디렉토리 하위 라우트의 레이아웃(즉, 네비게이션 구조)를 정의합니다.
- *
- * 1. [username]/_layout.tsx가 없으면:
- * expo-router는 [username] 폴더 안의 모든 파일(index.tsx, replies.tsx, reposts.tsx)을 각각 하나의 탭(Tab Bar의 항목)으로 자동 인식합니다.
- * 그래서 아래 탭 바에
- * [username]
- * [username]/replies
- * [username]/reposts
- * 이렇게 세 개가 각각 탭으로 표시됩니다.
- *
- * 2. [username]/_layout.tsx가 있으면:
- * _layout.tsx가 있으면, 그 하위의 모든 페이지는 _layout.tsx가 반환하는 컴포넌트(예: <Slot />, <Stack />, <Tabs /> 등) 안에 렌더링됩니다.
- * 폴더가 하나의 탭만 차지하고, 그 안에서만 내부 페이지 이동
- */
+export const MaterialTopTabs = withLayoutContext<
+  MaterialTopTabNavigationOptions,
+  typeof Navigator,
+  TabNavigationState<ParamListBase>,
+  MaterialTopTabNavigationEventMap
+>(Navigator);
+
+export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+  const { user } = useContext(AuthContext);
+  const isLoggedIn = !!user;
+
+  return (
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top, paddingBottom: insets.bottom },
+      ]}
+    >
+      <View style={styles.header}>
+        {isLoggedIn && (
+          <Pressable
+            style={styles.menuButton}
+            onPress={() => {
+              setIsSideMenuOpen(true);
+            }}
+          >
+            <Ionicons name="menu" size={24} color="black" />
+          </Pressable>
+        )}
+        <SideMenu
+          isVisible={isSideMenuOpen}
+          onClose={() => setIsSideMenuOpen(false)}
+        />
+      </View>
+
+      <View style={styles.profile}>
+        <View style={styles.profileHeader}>
+          <Image
+            source={{ uri: user?.profileImageUrl }}
+            style={styles.profileAvatar}
+          />
+          <Text>{user?.name}</Text>
+          <Text>{user?.id}</Text>
+          <Text>{user?.description}</Text>
+        </View>
+      </View>
+
+      <MaterialTopTabs
+        screenOptions={{
+          lazy: true, // 각 탭 화면을 처음 진입할 때 렌더링(lazy load)하여 초기 렌더링 성능을 높임. 기본값은 false(모든 탭을 미리 렌더링)
+          tabBarStyle: {
+            backgroundColor: "white",
+            shadowColor: "transparent",
+            position: "relative",
+          },
+          tabBarPressColor: "transparent",
+          tabBarActiveTintColor: "#555",
+          tabBarIndicatorStyle: {
+            backgroundColor: "black",
+            height: 1,
+          },
+          tabBarIndicatorContainerStyle: {
+            backgroundColor: "#aaa",
+            position: "absolute",
+            top: 48,
+            height: 1,
+          },
+        }}
+      >
+        <MaterialTopTabs.Screen name="index" options={{ title: "Threads" }} />
+        <MaterialTopTabs.Screen name="replies" options={{ title: "Replies" }} />
+        <MaterialTopTabs.Screen name="reposts" options={{ title: "Reposts" }} />
+      </MaterialTopTabs>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  menuButton: {
+    padding: 8,
+  },
+  profile: {
+    padding: 16,
+  },
+  profileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  profileAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+});
