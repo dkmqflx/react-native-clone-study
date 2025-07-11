@@ -16,6 +16,7 @@ import { useContext, useState } from "react";
 import {
   Image,
   Pressable,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -47,8 +48,21 @@ export default function TabLayout() {
 
   const handleCloseEditModal = () => setIsEditModalVisible(false);
 
-  const handleShareProfile = () => {
+  const handleShareProfile = async () => {
+    // https://reactnative.dev/docs/share
     console.log("share profile");
+
+    // 링크가 아니라 파일을 쉐어하는 경우
+    // https://docs.expo.dev/versions/latest/sdk/sharing/#api
+
+    try {
+      await Share.share({
+        message: `thread://@${username}`,
+        url: `thread://@${username}`,
+      });
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
