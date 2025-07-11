@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { Tabs, useRouter } from "expo-router";
-import React, { useContext, useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import {
   Animated,
   Modal,
   Pressable,
-  PressableProps,
   Text,
   TouchableOpacity,
+  useColorScheme,
   View,
 } from "react-native";
 import { AuthContext } from "../_layout";
@@ -20,13 +20,7 @@ const AnimatedTabBarButton = ({
   ...restProps
 }: BottomTabBarButtonProps) => {
   const scaleValue = useRef(new Animated.Value(1)).current;
-  //  React Native의 애니메이션 시스템에서 사용하는 값 객체입니다. 여기서 1은 초기값(스케일 1, 즉 원래 크기)을 의미합니다.
 
-  /**
-   * 더 복잡한 애니메이션을 구현하고 싶다면
-   * https://docs.expo.dev/versions/latest/sdk/reanimated/
-   * https://docs.expo.dev/versions/latest/sdk/lottie/
-   */
   const handlePressOut = () => {
     Animated.sequence([
       Animated.spring(scaleValue, {
@@ -35,17 +29,16 @@ const AnimatedTabBarButton = ({
         speed: 200,
       }),
       Animated.spring(scaleValue, {
-        toValue: 1, // 애니메이션이 도달할 최종 값입니다.
-        useNativeDriver: true, // 애니메이션을 JS 스레드가 아닌 네이티브 드라이버에서 실행하도록 하여 성능을 높입니다.
+        toValue: 1,
+        useNativeDriver: true,
         speed: 200,
-        // friction: 4, // 스프링(Spring) 애니메이션의 마찰력(저항)을 조절합니다. 값이 클수록 애니메이션이 더 빨리 멈추고, 작을수록 더 오래 흔들립니다(즉, 덜 탄력적임).
       }),
     ]).start();
   };
 
   return (
     <Pressable
-      {...(restProps as PressableProps)} // 타입 에러 때문에 처리
+      {...restProps}
       onPress={onPress}
       onPressOut={handlePressOut}
       style={[
@@ -64,9 +57,9 @@ const AnimatedTabBarButton = ({
 
 export default function TabLayout() {
   const router = useRouter();
-
   const { user } = useContext(AuthContext);
   const isLoggedIn = !!user;
+  const colorScheme = useColorScheme();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const openLoginModal = () => {
@@ -88,6 +81,10 @@ export default function TabLayout() {
         backBehavior="history"
         screenOptions={{
           headerShown: false,
+          tabBarStyle: {
+            backgroundColor: colorScheme === "dark" ? "#101010" : "white",
+            borderTopWidth: 0,
+          },
           tabBarButton: (props) => <AnimatedTabBarButton {...props} />,
         }}
       >
@@ -99,12 +96,17 @@ export default function TabLayout() {
               <Ionicons
                 name="home"
                 size={24}
-                color={focused ? "black" : "gray"}
+                color={
+                  focused
+                    ? colorScheme === "dark"
+                      ? "white"
+                      : "black"
+                    : "gray"
+                }
               />
             ),
           }}
         />
-
         <Tabs.Screen
           name="search"
           options={{
@@ -113,16 +115,22 @@ export default function TabLayout() {
               <Ionicons
                 name="search"
                 size={24}
-                color={focused ? "black" : "gray"}
+                color={
+                  focused
+                    ? colorScheme === "dark"
+                      ? "white"
+                      : "black"
+                    : "gray"
+                }
               />
             ),
           }}
         />
-
         <Tabs.Screen
           name="add"
           listeners={{
             tabPress: (e) => {
+              console.log("tabPress");
               e.preventDefault();
               if (isLoggedIn) {
                 router.navigate("/modal");
@@ -137,12 +145,17 @@ export default function TabLayout() {
               <Ionicons
                 name="add"
                 size={24}
-                color={focused ? "black" : "gray"}
+                color={
+                  focused
+                    ? colorScheme === "dark"
+                      ? "white"
+                      : "black"
+                    : "gray"
+                }
               />
             ),
           }}
         />
-
         <Tabs.Screen
           name="activity"
           listeners={{
@@ -159,12 +172,17 @@ export default function TabLayout() {
               <Ionicons
                 name="heart-outline"
                 size={24}
-                color={focused ? "black" : "gray"}
+                color={
+                  focused
+                    ? colorScheme === "dark"
+                      ? "white"
+                      : "black"
+                    : "gray"
+                }
               />
             ),
           }}
         />
-
         <Tabs.Screen
           name="[username]"
           listeners={{
@@ -181,26 +199,24 @@ export default function TabLayout() {
               <Ionicons
                 name="person-outline"
                 size={24}
-                color={focused ? "black" : "gray"}
+                color={
+                  focused
+                    ? colorScheme === "dark"
+                      ? "white"
+                      : "black"
+                    : "gray"
+                }
               />
             ),
           }}
         />
-
-        {/*
-         * 탭 바에는 안 보이지만 URL로는 접근 가능한 숨겨진 라우트를 만드는 코드입니다.
-         * 예를 들어, 홈 탭에서 게시글 1을 클릭하면, 탭 바에는 안 보이지만 URL로는 접근 가능한 숨겨진 라우트를 만드는 코드입니다.
-         * (post)라는 별도의 라우트를 만든 이유는 [username] 탭과 게시글을 보여주는 페이지를 구분하기 위함입니다.
-         */}
         <Tabs.Screen
           name="(post)/[username]/post/[postID]"
           options={{
-            href: null, // 이 부분 때문에 하단 탭 바에 표시되지 않습니다.
+            href: null,
           }}
         />
       </Tabs>
-
-      {/* 로그아웃 상태일 때만 보이는 모달 */}
       <Modal
         visible={isLoginModalOpen}
         transparent={true}
@@ -217,7 +233,6 @@ export default function TabLayout() {
             <Pressable onPress={toLoginPage}>
               <Text>Login Modal</Text>
             </Pressable>
-
             <TouchableOpacity onPress={closeLoginModal}>
               <Ionicons name="close" size={24} color="#555" />
             </TouchableOpacity>

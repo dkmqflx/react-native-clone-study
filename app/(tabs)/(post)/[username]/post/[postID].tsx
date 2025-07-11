@@ -1,24 +1,184 @@
-import { Text, View } from "react-native";
+import Post from "@/components/Post";
+import SideMenu from "@/components/SideMenu";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function Post() {
+export default function PostScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+
   return (
-    <View>
-      <Text>게시글 상세 페이지입니다.</Text>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top },
+        colorScheme === "dark" ? styles.containerDark : styles.containerLight,
+      ]}
+    >
+      <View
+        style={[
+          styles.header,
+          colorScheme === "dark" ? styles.headerDark : styles.headerLight,
+        ]}
+      >
+        {router.canGoBack() ? (
+          <Pressable
+            style={styles.menuButton}
+            onPress={() => {
+              router.back();
+            }}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={24}
+              color={colorScheme === "dark" ? "gray" : "black"}
+            />
+          </Pressable>
+        ) : (
+          <Pressable
+            style={styles.menuButton}
+            onPress={() => {
+              setIsSideMenuOpen(true);
+            }}
+          >
+            <Ionicons
+              name="menu"
+              size={24}
+              color={colorScheme === "dark" ? "gray" : "black"}
+            />
+          </Pressable>
+        )}
+        <Image
+          source={require("@/assets/images/react-logo.png")}
+          style={styles.logo}
+        />
+        <SideMenu
+          isVisible={isSideMenuOpen}
+          onClose={() => setIsSideMenuOpen(false)}
+        />
+      </View>
+      <ScrollView style={styles.scrollView}>
+        <Post
+          item={{
+            id: "1",
+            username: "zerocho",
+            displayName: "Zerocho",
+            content: "Hello, world!",
+            timeAgo: "1 hour ago",
+            likes: 10,
+            comments: 5,
+            reposts: 2,
+            isVerified: true,
+            avatar: "https://randomuser.me/api/portraits/men/1.jpg",
+            image: `https://picsum.photos/800/600?random=${Math.random()}`,
+          }}
+        />
+        <View style={styles.repliesHeader}>
+          <Text
+            style={
+              colorScheme === "dark"
+                ? styles.repliesHeaderDark
+                : styles.repliesHeaderLight
+            }
+          >
+            Replies
+          </Text>
+        </View>
+        <Post
+          item={{
+            id: "2",
+            username: "sarah",
+            displayName: "Sarah",
+            content: "Hello, comment!",
+            timeAgo: "1 hour ago",
+            likes: 10,
+            comments: 5,
+            reposts: 2,
+            isVerified: true,
+            avatar: "https://randomuser.me/api/portraits/women/1.jpg",
+          }}
+        />
+        <Post
+          item={{
+            id: "3",
+            username: "anne",
+            displayName: "Anne",
+            content: "Another comment!",
+            timeAgo: "1 hour ago",
+            likes: 10,
+            comments: 5,
+            reposts: 2,
+            isVerified: true,
+            avatar: "https://randomuser.me/api/portraits/women/2.jpg",
+            image: `https://picsum.photos/800/600?random=${Math.random()}`,
+          }}
+        />
+      </ScrollView>
     </View>
   );
 }
 
-/**
- * [username]에 post를 두지 않고
- * (post) 경로로 별도로 설정한 이유는
- * post에 접근 했을 때 하단의 [username]이 highlight 되는 것을 막기 위함
- *
- * 만약 /[username]/post/[postID] 경로가
- * [username] 폴더(즉, 프로필 탭 내부)에 있으면,
- * 사용자가 포스트 상세 페이지(/johndoe/post/123)에 들어갔을 때
- * 탭 바에서 [username](프로필) 탭이 계속 활성화(하이라이트)됩니다.
- * 이건 UX적으로 "아직 프로필 탭에 있다"고 오해하게 만들 수 있습니다.
- *
- * 따라서 (post) Route Group을 만들어 -> app/(tabs)/(post)/[username]/post/[postID].tsx 이렇게 해서
- * 포스트 상세 페이지에 접근해도 탭 바에서 [username]이 highlight 되지 않도록 합니다.
- */
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  containerLight: {
+    backgroundColor: "white",
+  },
+  containerDark: {
+    backgroundColor: "#101010",
+  },
+  header: {
+    height: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerLight: {
+    backgroundColor: "white",
+  },
+  headerDark: {
+    backgroundColor: "#101010",
+  },
+  menuButton: {
+    position: "absolute",
+    left: 16,
+  },
+  logo: {
+    width: 32,
+    height: 32,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  repliesHeader: {
+    height: 50,
+    paddingLeft: 16,
+    borderBottomWidth: 1,
+    justifyContent: "center",
+    borderBottomColor: "#e0e0e0",
+  },
+  repliesHeaderText: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  repliesHeaderDark: {
+    color: "white",
+  },
+  repliesHeaderLight: {
+    color: "#000",
+  },
+});
