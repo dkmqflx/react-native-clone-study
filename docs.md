@@ -1,0 +1,95 @@
+## 1. 딥링킹(Deep Linking)이란?
+
+- **딥링킹**은 앱 내의 특정 화면이나 기능으로 바로 이동할 수 있도록 해주는 링크입니다.
+- 보통 `myapp://some/path`처럼 **커스텀 스킴(scheme)**을 사용합니다.
+- 예시:
+  - `expotest://activity`
+  - 이 링크를 클릭하면 앱이 실행되고, 지정한 화면으로 바로 이동합니다.
+
+---
+
+## 2. 유니버설 링크(Universal Linking)란?
+
+- **유니버설 링크**는 iOS(앱 클립 포함)에서 도입된 개념으로,  
+  **웹 URL(https://...)**을 클릭했을 때 앱이 설치되어 있으면 앱이 열리고,  
+  앱이 없으면 웹사이트가 열리는 방식입니다.
+- 예시:
+
+  - `https://myapp.com/activity`
+  - 사용자가 이 링크를 클릭하면,
+    - 앱이 설치되어 있으면 앱의 해당 화면으로 이동
+    - 앱이 없으면 웹사이트로 이동
+
+- **안드로이드**에서는 **앱 링크(App Links)**라는 이름으로 비슷한 기능을 제공합니다.
+
+---
+
+## 3. 딥링킹 vs 유니버설 링크 차이
+
+| 구분         | 딥링킹(Deep Linking)    | 유니버설 링크(Universal Linking)         |
+| ------------ | ----------------------- | ---------------------------------------- |
+| 링크 형태    | myapp://some/path       | https://myapp.com/some/path              |
+| 동작 환경    | 앱에서만 동작           | 앱/웹 모두 동작                          |
+| 앱 미설치 시 | 아무 일도 일어나지 않음 | 웹사이트로 이동                          |
+| 설정 난이도  | 비교적 간단             | 도메인 소유 증명 등 추가 설정 필요       |
+| 지원 플랫폼  | iOS, Android            | iOS(Universal Links), Android(App Links) |
+
+---
+
+## 4. Expo Go에서 딥링킹 실행 방법
+
+### 1) app.json에 scheme 설정
+
+```json
+{
+  "expo": {
+    "scheme": "expotest"
+  }
+}
+```
+
+### 2) 딥링크 명령어 실행
+
+터미널에서 아래와 같이 입력:
+
+```sh
+npx uri-scheme open expotest://activity --android
+npx uri-scheme open expotest://activity --ios
+```
+
+- `expotest`는 app.json의 `"scheme"` 값입니다.
+- `/activity`는 이동하고 싶은 라우트 경로입니다.
+
+### 3) 동작 확인
+
+- Expo Go가 실행되고, 해당 경로로 이동하면 딥링킹이 정상 동작하는 것입니다.
+
+---
+
+## 5. 참고
+
+- **Expo Go**에서는 유니버설 링크(https://...) 방식은 지원하지 않고,  
+  **딥링크(커스텀 스킴)** 방식만 지원합니다.
+- 유니버설 링크/앱 링크는 실제 앱을 빌드해서 배포해야 제대로 동작합니다.
+
+  - https://docs.expo.dev/linking/android-app-links/
+  - https://docs.expo.dev/linking/ios-universal-links/
+
+- [expo-linking](https://docs.expo.dev/linking/into-other-apps/#using-expo-linking-api)
+
+  - Expo에서 제공하는 Linking API로, 네이티브 앱/웹 모두에서 URL을 열거나, 딥링크를 처리할 수 있게 해줍니다.
+
+  - 내부적으로 iOS/Android의 Linking API, 웹의 window.open 등을 추상화합니다.
+  - `Linking.openURL('https://expo.dev/')` 이 함수를 호출하면, 모바일에서는 기본 브라우저(Chrome, Safari 등)로 해당 URL을 엽니다.
+
+  - 웹에서는 새 탭으로 해당 URL을 엽니다.
+
+  - 앱 딥링크(myapp://...)도 지원합니다.
+
+---
+
+### 요약
+
+- **딥링킹**: myapp:// 형태, 앱 내 특정 화면으로 바로 이동, Expo Go에서 지원
+- **유니버설 링크**: https:// 형태, 앱/웹 모두 지원, 앱 미설치 시 웹으로 이동, Expo Go에서는 지원하지 않음
+- **Expo Go에서 딥링킹**: scheme 설정 후, `npx uri-scheme open ...` 명령어로 테스트
